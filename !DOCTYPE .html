@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Study Planner</title>
+<style>
+  body {
+    font-family: "Hiragino Sans", "Noto Sans JP", sans-serif;
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+    background: #fff;
+    color: #333;
+  }
+
+  h1 { text-align:center; }
+
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+  }
+
+  .profile {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .profile img {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #c653c6;
+  }
+
+  .tabs {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 15px;
+  }
+
+  .tab {
+    padding: 8px 20px;
+    margin: 0 5px;
+    border-radius: 20px;
+    cursor: pointer;
+    background: #f7f7f7;
+  }
+
+  .tab.active {
+    background: #f5d9f7;
+    color: #c653c6;
+    font-weight: bold;
+  }
+
+  #calendar-view, #task-view { display:none; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 15px;
+  }
+
+  th, td {
+    border: 1px solid #eee;
+    padding: 6px;
+    text-align: left;
+  }
+
+  th { background: #f7f7f7; }
+
+  .complete-btn, .rescue-btn {
+    padding: 3px 6px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size:12px;
+  }
+
+  .complete-btn { background:#6aa6ff; color:white; }
+  .rescue-btn { background:#f5a623; color:white; }
+
+  .complete-btn:hover { background:#4f8ef5; }
+  .rescue-btn:hover { background:#e08c1b; }
+
+  #calendar {
+    display:grid;
+    grid-template-columns: repeat(7,1fr);
+    gap: 3px;
+  }
+
+  .day {
+    border:1px solid #ddd;
+    min-height:60px;
+    padding:4px;
+    position:relative;
+    cursor:pointer;
+    background:#fdfdfd;
+  }
+
+  .day h4 {
+    margin:0;
+    font-size:14px;
+  }
+
+  .tasks-on-day {
+    font-size:12px;
+    margin-top:2px;
+  }
+
+  .add-task input, .add-task button {
+    margin:3px 0;
+    padding:5px;
+    width: 100%;
+    box-sizing:border-box;
+  }
+
+  .add-task label { font-size:13px; }
+
+  input[type="file"] { padding:3px; }
+</style>
+</head>
+<body>
+
+<h1>📅 Study Planner</h1>
+
+<div class="header">
+  <div class="profile">
+    <img id="userProfile" src="https://i.pravatar.cc/100?img=1">
+    <input type="file" id="profileFile" accept="image/*">
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" id="task-tab">タスク</div>
+  <div class="tab" id="calendar-tab">カレンダー</div>
+</div>
+
+<!-- タスク入力 -->
+<div id="task-view">
+  <div class="add-task">
+    <h3>📘 新しい課題を追加</h3>
+    <input type="text" id="taskName" placeholder="課題名">
+    <label>予定日時：</label>
+    <input type="date" id="taskDate">
+    <input type="time" id="taskTime">
+    <input type="number" id="taskDuration" placeholder="所要時間(分)">
+    <input type="text" id="taskDeadline" placeholder="期限(例:2025-11-15/毎日)">
+    <button id="addTaskBtn">＋ 追加</button>
+  </div>
+
+  <h3>未完了タスク</h3>
+  <table id="task-table">
+    <tr><th>課題名</th><th>予定</th><th>時間</th><th>期限</th><th>操作</th></tr>
+  </table>
+
+  <h3>完了した課題</h3>
+  <table id="completed-table">
+    <tr><th>課題名</th><th>状態</th><th>時間</th><th>期限</th><th>救済</th></tr>
+  </table>
+</div>
+
+<!-- カレンダー表示 -->
+<div id="calendar-view">
+  <div style="text-align:center; margin-bottom:5px;">
+    <button id="prevMonth">&lt;</button>
+    <span id="currentMonth"></span>
+    <button id="nextMonth">&gt;</button>
+  </div>
+  <div id="calendar"></div>
+</div>
+
+<script>
+const taskTab = document.getElementById("task-tab");
+const calendarTab = document.getElementById("calendar-tab");
+const taskView = document.getElementById("task-view");
+const calendarView = document.getElementById("calendar-view");
+
+taskTab.addEventListener("click", ()=>{
+  taskTab.classList.add("active");
+  calendarTab.classList.remove("active");
+  taskView.style.display = "block";
+  calendarView.style.display = "none";
+});
+
+calendarTab.addEventListener("click", ()=>{
+  calendarTab.classList.add("active");
+  taskTab.classList.remove("active");
+  calendarView.style.display = "block";
+  taskView.style.display = "none";
+  renderCalendar();
+});
+
+// プロフィール画像変更
+const profileFile = document.getElementById("profileFile");
+const userProfile = document.getElementById("userProfile");
+profileFile.addEventListener("change", (e)=>{
+  const file = e.target.files[0];
+  if(file){
+    const reader = new FileReader();
+    reader.onload = function(evt){
+      userProfile.src = evt.target.result;
+    }
+    reader.readAsDataURL(file);
+  }
+});
+
+// タスク追加
+const addTaskBtn = document.getElementById("addTaskBtn");
+const taskTable = document.getElementById("task-table");
+const completedTable = document.getElementById("completed-table");
+let tasks = [];
+
+addTaskBtn.addEventListener("click", ()=>{
+  const name = document.getElementById("taskName").value.trim();
+  const date = document.getElementById("taskDate").value;
+  const time = document.getElementById("taskTime").value;
+  const duration = document.getElementById("taskDuration").value;
+  const deadline = document.getElementById("taskDeadline").value;
+
+  if(!name) return alert("課題名を入力してください");
+
+  const task = {name,date,time,duration,deadline,completed:false};
+  tasks.push(task);
+  renderTasks();
+  renderCalendar();
+
+  // リセット
+  document.getElementById("taskName").value = "";
+  document.getElementById("taskDate").value = "";
+  document.getElementById("taskTime").value = "";
+  document.getElementById("taskDuration").value = "";
+  document.getElementById("taskDeadline").value = "";
+});
+
+function renderTasks(){
+  taskTable.innerHTML = '<tr><th>課題名</th><th>予定</th><th>時間</th><th>期限</th><th>操作</th></tr>';
+  completedTable.innerHTML = '<tr><th>課題名</th><th>状態</th><th>時間</th><th>期限</th><th>救済</th></tr>';
+  tasks.forEach((t,i)=>{
+    if(!t.completed){
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td>${t.name}</td>
+                      <td>${t.date||"-"} ${t.time||""}</td>
+                      <td>0/${t.duration||"未設定"}</td>
+                      <td>${t.deadline||"-"}</td>
+                      <td><button class="complete-btn" data-i="${i}">完了</button></td>`;
+      taskTable.appendChild(tr);
+    }else{
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td>${t.name}</td>
+                      <td>完了済</td>
+                      <td>${t.duration||"-"}</td>
+                      <td>${t.deadline||"-"}</td>
+                      <td><button class="rescue-btn" data-i="${i}">救済</button></td>`;
+      completedTable.appendChild(tr);
+    }
+  });
+}
+
+// 完了・救済ボタン
+taskTable.addEventListener("click",(e)=>{
+  if(e.target.classList.contains("complete-btn")){
+    const i = e.target.dataset.i;
+    tasks[i].completed = true;
+    renderTasks();
+    renderCalendar();
+  }
+});
+completedTable.addEventListener("click",(e)=>{
+  if(e.target.classList.contains("rescue-btn")){
+    const i = e.target.dataset.i;
+    tasks[i].completed = false;
+    renderTasks();
+    renderCalendar();
+  }
+});
+
+// カレンダー
+let today = new Date();
+let currentMonth = today.getMonth();
+let currentYear = today.getFullYear();
+const monthNames = ["1月","2月","3月","4月","5月","6月","7月","8月","9月","10月","11月","12月"];
+const calendarEl = document.getElementById("calendar");
+const currentMonthEl = document.getElementById("currentMonth");
+
+document.getElementById("prevMonth").addEventListener("click", ()=>{
+  currentMonth--;
+  if(currentMonth<0){ currentMonth=11; currentYear--; }
+  renderCalendar();
+});
+document.getElementById("nextMonth").addEventListener("click", ()=>{
+  currentMonth++;
+  if(currentMonth>11){ currentMonth=0; currentYear++; }
+  renderCalendar();
+});
+
+function renderCalendar(){
+  calendarEl.innerHTML = "";
+  currentMonthEl.textContent = monthNames[currentMonth]+" "+currentYear;
+
+  const firstDay = new Date(currentYear,currentMonth,1).getDay();
+  const lastDate = new Date(currentYear,currentMonth+1,0).getDate();
+
+  // 空白日
+  for(let i=0;i<firstDay;i++){
+    const blank = document.createElement("div");
+    blank.classList.add("day");
+    calendarEl.appendChild(blank);
+  }
+
+  for(let d=1; d<=lastDate; d++){
+    const dayDiv = document.createElement("div");
+    dayDiv.classList.add("day");
+    const dayHeader = document.createElement("h4");
+    dayHeader.textContent = d;
+    dayDiv.appendChild(dayHeader);
+
+    // タスク表示
+    const taskList = document.createElement("div");
+    taskList.classList.add("tasks-on-day");
+    tasks.forEach(t=>{
+      if(t.date && !t.completed){
+        const taskDate = new Date(t.date);
+        if(taskDate.getFullYear()===currentYear && taskDate.getMonth()===currentMonth && taskDate.getDate()===d){
+          const taskEl = document.createElement("div");
+          taskEl.textContent = t.name;
+          taskEl.style.fontSize="12px";
+          taskEl.style.background="#d0f0fd";
+          taskEl.style.margin="1px 0";
+          taskEl.style.padding="1px";
+          taskEl.style.borderRadius="3px";
+          taskEl.style.cursor="pointer";
+
+          // カレンダーでクリック→完了
+          taskEl.addEventListener("click", ()=>{
+            const index = tasks.indexOf(t);
+            if(index>-1){
+              tasks[index].completed = true;
+              renderTasks();
+              renderCalendar();
+            }
+          });
+
+          taskList.appendChild(taskEl);
+        }
+      }
+    });
+    dayDiv.appendChild(taskList);
+    calendarEl.appendChild(dayDiv);
+  }
+}
+
+// 初期表示
+taskView.style.display = "block";
+renderTasks();
+renderCalendar();
+</script>
+</body>
+</html>
+
