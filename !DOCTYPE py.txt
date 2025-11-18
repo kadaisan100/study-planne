@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Study Planner</title>
+  <style>
+    body {
+      font-family: "Hiragino Sans", "Noto Sans JP", sans-serif;
+      background: #fff;
+      color: #333;
+      padding: 20px;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    /* ヘッダー */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .header h1 {
+      font-size: 20px;
+    }
+
+    /* タブ */
+    .tabs {
+      display: flex;
+      justify-content: center;
+      background: #f7f7f7;
+      border-radius: 20px;
+      padding: 5px;
+      width: 200px;
+      margin: 0 auto 10px;
+    }
+
+    .tab {
+      flex: 1;
+      text-align: center;
+      padding: 5px 0;
+      border-radius: 15px;
+      cursor: pointer;
+    }
+
+    .tab.active {
+      background: #f5d9f7;
+      color: #c653c6;
+      font-weight: bold;
+    }
+
+    /* 表 */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 8px;
+      border-bottom: 1px solid #eee;
+    }
+
+    th {
+      font-weight: 600;
+      font-size: 13px;
+      color: #666;
+    }
+
+    td {
+      font-size: 14px;
+    }
+
+    /* カラーラベル */
+    .dot {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      margin-right: 6px;
+    }
+
+    .purple { background: #c5a4f5; }
+    .blue { background: #6aa6ff; }
+    .green { background: #98e6b7; }
+    .brown { background: #c7a07d; }
+
+    /* スイッチ */
+    .switch {
+      display: flex;
+      align-items: center;
+      margin: 20px 0;
+      gap: 8px;
+    }
+
+    .toggle {
+      appearance: none;
+      width: 40px;
+      height: 22px;
+      background: #ccc;
+      border-radius: 20px;
+      position: relative;
+      cursor: pointer;
+      outline: none;
+      transition: 0.3s;
+    }
+
+    .toggle::before {
+      content: "";
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      top: 2px;
+      left: 2px;
+      background: #fff;
+      border-radius: 50%;
+      transition: 0.3s;
+    }
+
+    .toggle:checked {
+      background: #a8e6a3;
+    }
+
+    .toggle:checked::before {
+      transform: translateX(18px);
+    }
+
+    /* 完了タスク */
+    .completed {
+      opacity: 0.7;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <h1>8/18</h1>
+    <div class="tabs">
+      <div class="tab">カレンダー</div>
+      <div class="tab active">タスク</div>
+    </div>
+  </div>
+
+  <table>
+    <tr>
+      <th>課題名</th>
+      <th>取組み予定</th>
+      <th>取組時間</th>
+      <th>期限</th>
+    </tr>
+    <tr>
+      <td><span class="dot purple"></span>【毎日】計算ドリル</td>
+      <td>8/18 10:00</td>
+      <td>0/30</td>
+      <td>毎日</td>
+    </tr>
+    <tr>
+      <td><span class="dot blue"></span>数学II 4ステップ</td>
+      <td>8/20 16:00</td>
+      <td>40/120</td>
+      <td>8/23</td>
+    </tr>
+    <tr>
+      <td><span class="dot green"></span>夏期講習宿題</td>
+      <td>8/20 20:00</td>
+      <td>0/60</td>
+      <td>8/25</td>
+    </tr>
+    <tr>
+      <td><span class="dot brown"></span>歴史総合ワーク</td>
+      <td>8/19 10:30</td>
+      <td>60/200</td>
+      <td>8/30</td>
+    </tr>
+  </table>
+
+  <div class="switch">
+    <input type="checkbox" class="toggle" checked>
+    <label>終了した課題を表示</label>
+  </div>
+
+  <table class="completed">
+    <tr>
+      <td><span class="dot purple"></span>英コミュフロンティア</td>
+      <td>完了済</td>
+      <td>350/400</td>
+      <td>8/30</td>
+    </tr>
+    <tr>
+      <td><span class="dot green"></span>生物リードα</td>
+      <td>完了済</td>
+      <td>100/120</td>
+      <td>9/2</td>
+    </tr>
+    <tr>
+      <td><span class="dot blue"></span>数学共テ</td>
+      <td>完了済</td>
+      <td>200/250</td>
+      <td>無期限</td>
+    </tr>
+  </table>
+
+</body>
+</html>
